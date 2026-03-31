@@ -1,6 +1,25 @@
-FROM eclipse-temurin:17-jdk-jammy
+# ── Build stage ──────────────────────────────────────────────────────────────
+FROM eclipse-temurin:17-jdk-jammy AS build
 
-ARG JAR_FILE=target/*.jar
-COPY ${JAR_FILE} app.jar
+WORKDIR /app
 
-ENTRYPOINT ["java","-jar","/app.jar"]
+# Copy Maven wrapper and project descriptor first for layer caching
+COPY mvnw mvnw.cmd ./
+COPY .mvn .mvn
+COPY pom.xml ./
+
+# Download dependencies (cached as long as pom.xml is unchanged)
+RUN ./mvnw dependency:go-offline -q
+
+# Copy source and compile
+COPY src ./src
+RUN ./mvnw clean package -DskipTests
+
+# ── Runtime stage ─────────────────────────────────────────────────────────────
+FROM eclipse-temurin:17-jre-jammy
+
+WORKDIR /app
+
+COPY --from=build /app/target/hotel-management-system-0.0.1-SNAPSHOT.jar app.jar
+
+ENTRYPOINT ["java", "-jar", "app.jar"]
