@@ -8,6 +8,9 @@ COPY mvnw mvnw.cmd ./
 COPY .mvn .mvn
 COPY pom.xml ./
 
+# Ensure Maven wrapper is executable (avoids exit code 126 on Linux)
+RUN chmod +x ./mvnw
+
 # Download dependencies (cached as long as pom.xml is unchanged)
 RUN ./mvnw dependency:go-offline -q
 
