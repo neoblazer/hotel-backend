@@ -27,8 +27,10 @@ public class BookingController {
 
     @GetMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<List<Booking>>> getAllBookings() {
-        return ResponseEntity.ok(new ApiResponse<>(true, "All bookings fetched", bookingService.getAllBookings()));
+    public ResponseEntity<ApiResponse<List<AdminBookingDTO>>> getAllBookings() {
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "All bookings fetched", bookingService.getAllBookingsForAdmin())
+        );
     }
 
     @GetMapping("/my")

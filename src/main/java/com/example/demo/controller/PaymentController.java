@@ -20,7 +20,7 @@ public class PaymentController {
     @GetMapping("/upi-link")
     public ResponseEntity<ApiResponse<String>> generateUpiLink(@RequestParam double amount) {
         String link = "upi://pay?pa=" + UPI_ID +
-                "&pn=StayLux+Hotel+Booking" +
+                "&pn=SmartStay+Vizag" +
                 "&am=" + amount +
                 "&cu=INR" +
                 "&tn=Hotel+Booking+Payment";

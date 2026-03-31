@@ -1,12 +1,16 @@
 package com.example.demo.logging;
 
-import org.aspectj.lang.*;
+import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Aspect
 @Component
@@ -33,7 +37,7 @@ public class LoggingAspect {
 
             long timeTaken = System.currentTimeMillis() - start;
 
-            String resultString = maskSensitiveResult(result);
+            String resultString = safeDescribe(result);
 
             logger.info("✅ Exiting: {} | Result: {} | ⏱️ {} ms",
                     methodName, resultString, timeTaken);
@@ -50,34 +54,69 @@ public class LoggingAspect {
         }
     }
 
-    // Mask sensitive fields in arguments
     private Object[] maskSensitiveArgs(Object[] args) {
         return Arrays.stream(args)
-                .map(arg -> {
-                    if (arg == null) return null;
-                    String str = arg.toString();
-                    // Basic password/token masking
-                    if (str.toLowerCase().contains("password") || str.toLowerCase().contains("token")) {
-                        return "***masked***";
-                    }
-                    return str;
-                })
+                .map(this::safeDescribeArg)
                 .toArray();
     }
 
-    // Mask sensitive info in result
-    private String maskSensitiveResult(Object result) {
+    private Object safeDescribeArg(Object arg) {
+        if (arg == null) return null;
+
+        String className = arg.getClass().getSimpleName();
+
+        if (arg instanceof String s) {
+            String lower = s.toLowerCase();
+            if (lower.contains("password") || lower.contains("token")) {
+                return "***masked***";
+            }
+            return s.length() > 150 ? s.substring(0, 150) + "...(truncated)" : s;
+        }
+
+        if (arg instanceof Number || arg instanceof Boolean) {
+            return arg;
+        }
+
+        if (arg instanceof Collection<?> c) {
+            return className + "(size=" + c.size() + ")";
+        }
+
+        if (arg instanceof Map<?, ?> m) {
+            return className + "(size=" + m.size() + ")";
+        }
+
+        return className;
+    }
+
+    private String safeDescribe(Object result) {
         if (result == null) return "null";
-        String str = result.toString();
-        // Truncate long outputs
-        if (str.length() > 500) {
-            str = str.substring(0, 500) + "...(truncated)";
+
+        if (result instanceof ResponseEntity<?> response) {
+            Object body = response.getBody();
+            return "ResponseEntity(status=" + response.getStatusCode() +
+                    ", body=" + safeDescribe(body) + ")";
         }
-        // Mask any passwords/tokens
-        if (str.toLowerCase().contains("password") || str.toLowerCase().contains("token")) {
-            str = str.replaceAll("(?i)password=[^,}]*", "password=***masked***");
-            str = str.replaceAll("(?i)token=[^,}]*", "token=***masked***");
+
+        if (result instanceof String s) {
+            String lower = s.toLowerCase();
+            if (lower.contains("password") || lower.contains("token")) {
+                return "***masked***";
+            }
+            return s.length() > 200 ? s.substring(0, 200) + "...(truncated)" : s;
         }
-        return str;
+
+        if (result instanceof Number || result instanceof Boolean) {
+            return String.valueOf(result);
+        }
+
+        if (result instanceof Collection<?> c) {
+            return result.getClass().getSimpleName() + "(size=" + c.size() + ")";
+        }
+
+        if (result instanceof Map<?, ?> m) {
+            return result.getClass().getSimpleName() + "(size=" + m.size() + ")";
+        }
+
+        return result.getClass().getSimpleName();
     }
 }

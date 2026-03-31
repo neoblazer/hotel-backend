@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.AdminBookingDTO;
 import com.example.demo.dto.BookingDTO;
 import com.example.demo.dto.BookingSummaryDTO;
 import com.example.demo.dto.BookingRequestDTO;
@@ -77,10 +78,24 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
-    public List<Booking> getAllBookings() {
-        return bookingRepository.findAll();
+    @Transactional(readOnly = true)
+    public List<AdminBookingDTO> getAllBookingsForAdmin() {
+        return bookingRepository.findAll()
+                .stream()
+                .map(b -> new AdminBookingDTO(
+                        b.getId(),
+                        b.getUser() != null ? b.getUser().getName() : "—",
+                        b.getHotel() != null ? b.getHotel().getName() : "—",
+                        b.getRoom() != null ? b.getRoom().getType() : "—",
+                        b.getCheckInDate(),
+                        b.getCheckOutDate(),
+                        b.getTotalPrice(),
+                        b.getStatus().name()
+                ))
+                .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<BookingDTO> getMyBookings() {
         User user = userRepository.findByEmail(getCurrentUserEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
@@ -121,6 +136,7 @@ public class BookingService {
         return bookingRepository.save(booking);
     }
 
+    @Transactional(readOnly = true)
     public BookingSummaryDTO getMyBookingSummary() {
         User user = userRepository.findByEmail(getCurrentUserEmail())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));

@@ -29,28 +29,40 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> {}) // Use CorsConfig bean
+            .cors(cors -> {})
             .sessionManagement(session ->
                     session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                    // Public: auth endpoints
+                    // Public auth endpoints
                     .requestMatchers("/auth/**").permitAll()
-                    // Public: Swagger
+
+                    // Public docs
                     .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                    // Public: read hotels and rooms
+
+                    // Public read endpoints
                     .requestMatchers(HttpMethod.GET, "/hotels/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/rooms/**").permitAll()
                     .requestMatchers(HttpMethod.GET, "/ratings/**").permitAll()
-                    // Admin only
+
+                    // Admin-only endpoints
                     .requestMatchers("/admin/**").hasRole("ADMIN")
+                    .requestMatchers("/users/**").hasRole("ADMIN")
                     .requestMatchers(HttpMethod.POST, "/hotels").hasRole("ADMIN")
                     .requestMatchers(HttpMethod.PUT, "/hotels/**").hasRole("ADMIN")
                     .requestMatchers(HttpMethod.DELETE, "/hotels/**").hasRole("ADMIN")
                     .requestMatchers(HttpMethod.POST, "/rooms").hasRole("ADMIN")
                     .requestMatchers(HttpMethod.DELETE, "/rooms/**").hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.GET, "/users").hasRole("ADMIN")
-                    .requestMatchers(HttpMethod.DELETE, "/users/**").hasRole("ADMIN")
-                    // Everything else: authenticated
+
+                    // Authenticated write actions
+                    .requestMatchers(HttpMethod.POST, "/bookings").authenticated()
+                    .requestMatchers(HttpMethod.GET, "/bookings/my").authenticated()
+                    .requestMatchers(HttpMethod.PUT, "/bookings/cancel/**").authenticated()
+                    .requestMatchers(HttpMethod.GET, "/bookings/summary").authenticated()
+                    .requestMatchers(HttpMethod.POST, "/payment/**").authenticated()
+                    .requestMatchers(HttpMethod.GET, "/payment/**").authenticated()
+                    .requestMatchers(HttpMethod.POST, "/ratings").authenticated()
+
+                    // Anything else
                     .anyRequest().authenticated()
             )
             .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
