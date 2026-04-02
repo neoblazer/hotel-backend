@@ -2,16 +2,19 @@ package com.example.demo.controller;
 
 import com.example.demo.dto.*;
 import com.example.demo.entity.Hotel;
+import com.example.demo.repository.RoomRepository;
 import com.example.demo.service.HotelService;
 import com.example.demo.service.RoomService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -24,6 +27,9 @@ public class HotelController {
 
     @Autowired
     private RoomService roomService;
+
+    @Autowired
+    private RoomRepository roomRepository;
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
@@ -52,7 +58,20 @@ public class HotelController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<HotelDTO>> getHotelById(@PathVariable Long id) {
         Hotel hotel = hotelService.getHotelById(id);
-        return ResponseEntity.ok(new ApiResponse<>(true, "Hotel fetched", hotelService.convertToDTO(hotel)));
+        Double minPrice = roomRepository.findMinPriceByHotelId(hotel.getId()).orElse(null);
+
+        HotelDTO dto = new HotelDTO(
+                hotel.getId(),
+                hotel.getName(),
+                hotel.getCity(),
+                hotel.getState(),
+                hotel.getRating(),
+                hotel.getImageUrl(),
+                hotel.getDescription(),
+                minPrice
+        );
+
+        return ResponseEntity.ok(new ApiResponse<>(true, "Hotel fetched", dto));
     }
 
     @GetMapping("/search")
@@ -73,8 +92,17 @@ public class HotelController {
             @RequestParam(required = false) Double min,
             @RequestParam(required = false) Double max,
             @RequestParam(required = false) Double rating,
+            @RequestParam(required = false) Integer capacity,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkIn,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOut,
             Pageable pageable) {
-        return ResponseEntity.ok(new ApiResponse<>(true, "Hotels found", hotelService.searchAdvanced(city, min, max, rating, pageable)));
+        return ResponseEntity.ok(
+                new ApiResponse<>(
+                        true,
+                        "Hotels found",
+                        hotelService.searchAdvanced(city, min, max, rating, capacity, checkIn, checkOut, pageable)
+                )
+        );
     }
 
     @GetMapping("/top")
