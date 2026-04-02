@@ -62,6 +62,9 @@ public class SecurityConfig {
                     .requestMatchers(HttpMethod.GET, "/payment/**").authenticated()
                     .requestMatchers(HttpMethod.POST, "/ratings").authenticated()
 
+                    .requestMatchers(HttpMethod.GET, "/wishlist/**").authenticated()
+                    .requestMatchers(HttpMethod.POST, "/wishlist").authenticated()
+                    .requestMatchers(HttpMethod.DELETE, "/wishlist/**").authenticated()
                     // Anything else
                     .anyRequest().authenticated()
             )
