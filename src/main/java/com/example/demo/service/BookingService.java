@@ -105,6 +105,7 @@ public class BookingService {
                 .map(b -> new BookingDTO(
                         b.getId(),
                         b.getHotel() != null ? b.getHotel().getName() : "N/A",
+                        b.getHotel() != null ? b.getHotel().getImageUrl() : null,
                         b.getRoom() != null ? b.getRoom().getType() : "N/A",
                         b.getCheckInDate(),
                         b.getCheckOutDate(),

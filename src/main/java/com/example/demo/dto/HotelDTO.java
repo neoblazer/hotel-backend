@@ -12,5 +12,6 @@ public class HotelDTO {
     private String state;
     private Double rating;
     private String imageUrl;
-    private String description;  // ← NEW field (was missing in old version)
+    private String description;
+    private Double minPrice;
 }

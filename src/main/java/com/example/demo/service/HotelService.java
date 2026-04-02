@@ -2,6 +2,7 @@ package com.example.demo.service;
 
 import com.example.demo.dto.HotelDTO;
 import com.example.demo.entity.Hotel;
+import com.example.demo.entity.Room;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.HotelRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -64,6 +65,15 @@ public class HotelService {
     }
 
     public HotelDTO convertToDTO(Hotel hotel) {
+        Double minPrice = null;
+
+        if (hotel.getRooms() != null && !hotel.getRooms().isEmpty()) {
+            minPrice = hotel.getRooms().stream()
+                    .map(Room::getBasePrice)
+                    .min(Double::compareTo)
+                    .orElse(null);
+        }
+
         return new HotelDTO(
                 hotel.getId(),
                 hotel.getName(),
@@ -71,7 +81,8 @@ public class HotelService {
                 hotel.getState(),
                 hotel.getRating(),
                 hotel.getImageUrl(),
-                hotel.getDescription()
+                hotel.getDescription(),
+                minPrice
         );
     }
 }
