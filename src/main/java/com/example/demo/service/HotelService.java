@@ -2,9 +2,9 @@ package com.example.demo.service;
 
 import com.example.demo.dto.HotelDTO;
 import com.example.demo.entity.Hotel;
-import com.example.demo.entity.Room;
 import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.repository.HotelRepository;
+import com.example.demo.repository.RoomRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +15,9 @@ public class HotelService {
 
     @Autowired
     private HotelRepository hotelRepository;
+
+    @Autowired
+    private RoomRepository roomRepository;
 
     public Hotel createHotel(Hotel hotel) {
         return hotelRepository.save(hotel);
@@ -65,14 +68,7 @@ public class HotelService {
     }
 
     public HotelDTO convertToDTO(Hotel hotel) {
-        Double minPrice = null;
-
-        if (hotel.getRooms() != null && !hotel.getRooms().isEmpty()) {
-            minPrice = hotel.getRooms().stream()
-                    .map(Room::getBasePrice)
-                    .min(Double::compareTo)
-                    .orElse(null);
-        }
+        Double minPrice = roomRepository.findMinPriceByHotelId(hotel.getId()).orElse(null);
 
         return new HotelDTO(
                 hotel.getId(),
