@@ -23,6 +23,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     List<Booking> findByUserId(Long userId);
 
-    @Query("SELECT SUM(b.totalPrice) FROM Booking b")
-    Double getTotalRevenue();
+    @Query("""
+    	    SELECT COALESCE(SUM(b.totalPrice), 0)
+    	    FROM Booking b
+    	    WHERE b.status <> com.example.demo.entity.BookingStatus.CANCELLED
+    	""")
+    	Double getTotalRevenue();
 }

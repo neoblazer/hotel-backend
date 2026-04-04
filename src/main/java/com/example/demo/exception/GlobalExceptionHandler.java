@@ -70,8 +70,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
-        log.error("Unhandled exception: ", ex.getMessage());
+        log.error("Unhandled exception", ex);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorResponse(ex.getMessage(), 500));
+                .body(new ErrorResponse("Something went wrong on the server", 500));
     }
 }

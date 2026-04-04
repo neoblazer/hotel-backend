@@ -16,22 +16,25 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    // ✅ Get all users (Admin only)
     @GetMapping
-    public ResponseEntity<List<UserResponseDTO>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<ApiResponse<List<UserResponseDTO>>> getAllUsers() {
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Users fetched successfully", userService.getAllUsers())
+        );
     }
 
-    // ✅ Get single user
     @GetMapping("/{id}")
-    public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getUserById(id));
+    public ResponseEntity<ApiResponse<UserResponseDTO>> getUserById(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "User fetched successfully", userService.getUserById(id))
+        );
     }
 
-    // ✅ Delete user
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteUser(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<String>> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
-        return ResponseEntity.ok("User deleted successfully");
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "User deleted successfully", "Deleted successfully")
+        );
     }
 }

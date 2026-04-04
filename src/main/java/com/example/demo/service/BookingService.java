@@ -32,17 +32,22 @@ public class BookingService {
         this.userRepository = userRepository;
     }
 
-    private String getCurrentUserEmail() {
+    private String getCurrentPrincipal() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (principal instanceof UserDetails ud) return ud.getUsername();
         return principal.toString();
     }
 
+    private User getCurrentUser() {
+        String principal = getCurrentPrincipal();
+        return userRepository.findByEmail(principal)
+                .or(() -> userRepository.findByPhone(principal))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+    }
+
     @Transactional
     public Booking createBooking(BookingRequestDTO request) {
-        User user = userRepository.findByEmail(getCurrentUserEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
+        User user = getCurrentUser();
         LocalDate checkIn = request.getCheckInDate();
         LocalDate checkOut = request.getCheckOutDate();
 
@@ -97,8 +102,7 @@ public class BookingService {
 
     @Transactional(readOnly = true)
     public List<BookingDTO> getMyBookings() {
-        User user = userRepository.findByEmail(getCurrentUserEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User user = getCurrentUser();
 
         return bookingRepository.findByUserId(user.getId())
                 .stream()
@@ -120,12 +124,16 @@ public class BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
-        String currentEmail = getCurrentUserEmail();
+        String currentPrincipal = getCurrentPrincipal();
+        String ownerPrincipal = booking.getUser().getEmail() != null && !booking.getUser().getEmail().isBlank()
+                ? booking.getUser().getEmail()
+                : booking.getUser().getPhone();
+
         boolean isAdmin = SecurityContextHolder.getContext().getAuthentication()
                 .getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
-        if (!isAdmin && !booking.getUser().getEmail().equals(currentEmail)) {
+        if (!isAdmin && !ownerPrincipal.equals(currentPrincipal)) {
             throw new UnauthorizedException("You cannot cancel this booking");
         }
 
@@ -139,8 +147,7 @@ public class BookingService {
 
     @Transactional(readOnly = true)
     public BookingSummaryDTO getMyBookingSummary() {
-        User user = userRepository.findByEmail(getCurrentUserEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        User user = getCurrentUser();
 
         List<Booking> bookings = bookingRepository.findByUserId(user.getId());
 

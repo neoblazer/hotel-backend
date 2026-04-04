@@ -74,9 +74,7 @@ public class PhoneOtpService {
         otp.setUsed(true);
         phoneOtpRepository.save(otp);
 
-        User user = userRepository.findAll().stream()
-                .filter(u -> phone.equals(u.getPhone()))
-                .findFirst()
+        User user = userRepository.findByPhone(phone)
                 .orElseGet(() -> {
                     User u = new User();
                     u.setName(name != null && !name.isBlank() ? name.trim() : "Phone User");

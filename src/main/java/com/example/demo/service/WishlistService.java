@@ -41,11 +41,6 @@ public class WishlistService {
         return principal.toString();
     }
 
-    private User getCurrentUser() {
-        return userRepository.findByEmail(getCurrentUserEmail())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-    }
-
     @Transactional
     public WishlistDTO addToWishlist(Long hotelId) {
         User user = getCurrentUser();
@@ -113,5 +108,17 @@ public class WishlistService {
                 hotel.getDescription(),
                 minPrice
         );
+    }
+    private String getCurrentPrincipal() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserDetails ud) return ud.getUsername();
+        return principal.toString();
+    }
+
+    private User getCurrentUser() {
+        String principal = getCurrentPrincipal();
+        return userRepository.findByEmail(principal)
+                .or(() -> userRepository.findByPhone(principal))
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 }
